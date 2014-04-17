@@ -25,7 +25,9 @@ SOURCES += main.cpp\
     utils/img_fmt_cvt.cpp \
     ui/collection_widget.cpp \
     face_detector/face_detector.cpp \
-    ui/train_widget.cpp
+    ui/train_widget.cpp \
+    face_recognizer/face_recognizer.cpp \
+    ui/sift_matcher_widget.cpp
 
 HEADERS  += \
     ui/fancy_widget/fancytabwidget.h \
@@ -37,7 +39,9 @@ HEADERS  += \
     utils/img_fmt_cvt.h \
     ui/collection_widget.h \
     face_detector/face_detector.h \
-    ui/train_widget.h
+    ui/train_widget.h \
+    face_recognizer/face_recognizer.h \
+    ui/sift_matcher_widget.h
 
 
 unix{

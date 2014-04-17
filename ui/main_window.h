@@ -5,6 +5,7 @@
 #include "ui/fancy_widget/fancytabwidget.h"
 #include "ui/collection_widget.h"
 #include "ui/train_widget.h"
+#include "ui/sift_matcher_widget.h"
 
 class main_window : public QMainWindow
 {
@@ -20,6 +21,7 @@ class main_window : public QMainWindow
         FancyTabWidget *wgt_ft;
         collection_widget *wgt_clt;
         train_widget  * wgt_train;
+        sift_matcher_widget *wgt_sm;
 };
 
 #endif // MAIN_WINDOW_H
