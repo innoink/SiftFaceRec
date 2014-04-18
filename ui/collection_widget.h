@@ -5,6 +5,7 @@
 #include <QDialog>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QGridLayout>
 #include <QPushButton>
 #include <QLineEdit>
 #include <QGroupBox>
@@ -46,8 +47,8 @@ class collection_widget : public QWidget
         void save_face(const IplImage *faceimg, int id);
     private:
         camera_widget *wgt_camera;
-        QHBoxLayout *hl;
-        QVBoxLayout *vl;
+
+        QWidget *wgt_right;
 
         QGroupBox *gb_cam;
         QSpinBox *sb_dev_no;

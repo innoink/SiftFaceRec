@@ -29,6 +29,7 @@ class capture_worker : public QObject
         void set_processor(const frame_processor &fp);
         void remove_processor();
     signals:
+        void capture_started();
         void capture_stopped();
         void new_frame(QImage frame, Mat *origin_frame);
 
@@ -76,6 +77,8 @@ class camera_widget : public QWidget
     private:
         QSize sizeHint() const;
     private:
+        bool started;
+
         QHBoxLayout *hl;
         Mat *corrent_frame;
         QLabel *lb_frame;

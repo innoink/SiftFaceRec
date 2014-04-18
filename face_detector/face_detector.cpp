@@ -62,7 +62,7 @@ bool face_detector::get_face_parameters(Mat &matImg)
 
     IplImage *orig_img = cvCloneImage(input_img);
     matImg = orig_img;
-    cascadeFace.detectMultiScale(matImg, faces, 1.1, 2, 0, Size(25, 25));
+    cascadeFace.detectMultiScale(matImg, faces, 1.1, 2, 0, Size(40, 40));
 
     if(faces.empty() == false) {
         //取最大的脸
@@ -191,20 +191,17 @@ void face_detector::face_marker_lbp(Mat *frame)
     static Mat smallImgROI;
     static Rect eyeArea;
     static Cgt_Eye _iris_point;
-    static         Rect leftEyeRect(0,0,0,0), rightEyeRect(0,0,0,0);
-    static             vector<Rect> eyes;
-    static         Point left_top, right_bottom;
+    static Rect leftEyeRect(0,0,0,0), rightEyeRect(0,0,0,0);
+    static vector<Rect> eyes;
+    static Point left_top, right_bottom;
 
-
-
-
-    face_cascade.detectMultiScale(frame_gray, faces, 1.1, 2, 0, Size(80, 80));
+    face_cascade.detectMultiScale(frame_gray, faces, 1.1, 2, 0, Size(40, 40));
     if(faces.empty() == false) {
         //取最大的脸
         largestFace.width=0;
         largestFace.height=0;
-        for( vector<Rect>::const_iterator r = faces.begin(); r != faces.end(); r++) {
-            if( (r->width * r->height) > (largestFace.width * largestFace.height) )
+        for (vector<Rect>::const_iterator r = faces.begin(); r != faces.end(); r++) {
+            if ((r->width * r->height) > (largestFace.width * largestFace.height))
                 largestFace = *r;
         }
 
@@ -219,17 +216,16 @@ void face_detector::face_marker_lbp(Mat *frame)
         eyeArea = largestFace;
         eyeArea.height = eyeArea.height/1.2; //仅对人脸的上半部分检测人眼，以减少错误率 //调整一下参数，只对上半部分有时检测不出来
         smallImgROI = (*frame)(eyeArea);
-
-            eyes_cascade.detectMultiScale(smallImgROI, eyes, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
-            if(eyes.size()>=2) { //必须至少有两只眼被检出
-                vector<Rect>::const_iterator nr = eyes.begin();
-                leftEyeRect = *nr;
-                nr++;
-                rightEyeRect = *nr;
-            } else {
-                //fprintf(stderr, "必须至少有两只眼被检出!\n");
-                return;
-            }
+        eyes_cascade.detectMultiScale(smallImgROI, eyes, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+        if(eyes.size()>=2) { //必须至少有两只眼被检出
+            vector<Rect>::const_iterator nr = eyes.begin();
+            leftEyeRect = *nr;
+            nr++;
+            rightEyeRect = *nr;
+        } else {
+            //fprintf(stderr, "必须至少有两只眼被检出!\n");
+            return;
+        }
 
         _iris_point.xleft = cvRound(largestFace.x + leftEyeRect.x + leftEyeRect.width*0.5);  //左眼中心的x坐标
         _iris_point.yleft = cvRound(largestFace.y + leftEyeRect.y + leftEyeRect.height*0.5);  //左眼中心的y坐标
@@ -240,13 +236,13 @@ void face_detector::face_marker_lbp(Mat *frame)
 //        if(iris_point.xleft >= iris_point.xright )
 //            fprintf(stderr, "11111111111"), nRetCode = false;
         //不允许眼睛在边界（由于，初始化的值为0，这也意味着如果少于两个眼检测出来，则认为检测失败）
-        if( (_iris_point.xleft==0) || (_iris_point.yleft==0) ||(_iris_point.xright==0) || (_iris_point.yright==0) )
+        if ((_iris_point.xleft==0) || (_iris_point.yleft==0) ||(_iris_point.xright==0) || (_iris_point.yright==0) )
             return;
         //不允许两只眼上下倾斜过多（也防止一些误检）
-        if(abs(_iris_point.yright-_iris_point.yleft) > (largestFace.width/3) )
+        if (abs(_iris_point.yright-_iris_point.yleft) > (largestFace.width/3) )
             return;
         //不允许两只眼左右间距小于1/4人脸宽度（也防止一些误检）
-        if(abs(_iris_point.xright-_iris_point.xleft) < (largestFace.width/4) )
+        if (abs(_iris_point.xright-_iris_point.xleft) < (largestFace.width/4) )
             return;
 
         //画出框到的人脸，验证调试用

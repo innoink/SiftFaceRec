@@ -20,6 +20,7 @@ void capture_worker::do_capture()
     this->stopped_mutex->lock();
     *(this->stopped) = false;
     this->stopped_mutex->unlock();
+    emit capture_started();
     while (true) {
         this->stopped_mutex->lock();
         if (*(this->stopped)) {
@@ -73,6 +74,7 @@ camera_widget::camera_widget(QWidget *parent) :
     this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     this->corrent_frame = NULL;
+    this->started = false;
 
     connect(this, &camera_widget::start_c_worker, this->c_worker, &capture_worker::do_capture);
     connect(this->c_worker_thread, &QThread::finished, this->c_worker, &capture_worker::deleteLater);
@@ -134,13 +136,22 @@ void camera_widget::start_capture()
 {
 
     emit this->start_c_worker();
+    //not correct!!
+    this->started = true;
 }
+
+bool camera_widget::is_started()
+{
+    return this->started;
+}
+
 
 void camera_widget::stop_capture()
 {
     this->c_worker_stopped_mutex.lock();
     this->c_worker_stopped = true;
     this->c_worker_stopped_mutex.unlock();
+    this->started = false;
 }
 
 Mat camera_widget::get_frame_mat()

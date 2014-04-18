@@ -5,8 +5,6 @@
 #-------------------------------------------------
 
 QT       += core gui
-QT       += multimedia
-QT       += multimediawidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -27,7 +25,9 @@ SOURCES += main.cpp\
     face_detector/face_detector.cpp \
     ui/train_widget.cpp \
     face_recognizer/face_recognizer.cpp \
-    ui/sift_matcher_widget.cpp
+    face_collection/face_collection.cpp \
+    ui/collection_widget_new.cpp \
+    ui/sift_demo_widget.cpp
 
 HEADERS  += \
     ui/fancy_widget/fancytabwidget.h \
@@ -41,12 +41,14 @@ HEADERS  += \
     face_detector/face_detector.h \
     ui/train_widget.h \
     face_recognizer/face_recognizer.h \
-    ui/sift_matcher_widget.h
-
+    face_collection/face_collection.h \
+    ui/collection_widget_new.h \
+    ui/sift_demo_widget.h
 
 unix{
     CONFIG += link_pkgconfig
     PKGCONFIG += opencv
+    LIBS += -lvl
 }
 win32{
     INCLUDEPATH += "C:/opencv/opencv/build/include/opencv" \

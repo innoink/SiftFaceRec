@@ -1,7 +1,9 @@
 #include <QFileDialog>
 #include <QDebug>
+#include <QMessageBox>
 #include "collection_widget.h"
 #include "utils/img_fmt_cvt.h"
+#include "face_collection/face_collection.h"
 
 
 face_detected_dlg::face_detected_dlg(bool *usy, QImage &face, QWidget *parent) :
@@ -30,55 +32,58 @@ face_detected_dlg::face_detected_dlg(bool *usy, QImage &face, QWidget *parent) :
 collection_widget::collection_widget(QWidget *parent) :
     QWidget(parent)
 {
-    this->wgt_camera = new camera_widget(this);
+    QHBoxLayout *hl;
+    QVBoxLayout *vl;
+    QGridLayout *gl;
 
-    this->gb_cam = new QGroupBox(tr("camera"), this);
-    this->sb_dev_no = new QSpinBox(this);
-    this->pb_open_cam = new QPushButton(tr("open"), this);
-    this->pb_close_cam = new QPushButton(tr("close"), this);
+    this->wgt_right = new QWidget(this);
+    this->gb_cam = new QGroupBox(tr("camera"), this->wgt_right);
+    this->sb_dev_no = new QSpinBox(this->gb_cam);
+    this->pb_open_cam = new QPushButton(tr("open"), this->gb_cam);
+    this->pb_close_cam = new QPushButton(tr("close"), this->gb_cam);
 
-    this->gb_clt = new QGroupBox(tr("collection"), this);
+    vl = new QVBoxLayout;
+    hl = new QHBoxLayout;
+    hl->addWidget(new QLabel(tr("camera device:"), this->gb_cam));
+    hl->addWidget(this->sb_dev_no);
+    vl->addLayout(hl);
+    hl = new QHBoxLayout;
+    hl->addWidget(this->pb_open_cam);
+    hl->addWidget(this->pb_close_cam);
+    vl->addLayout(hl);
+    this->gb_cam->setLayout(vl);
+
+    this->gb_clt = new QGroupBox(tr("collection"), this->wgt_right);
     this->sb_clt_id = new QSpinBox(this->gb_clt);
     this->le_clt_path = new QLineEdit(this->gb_clt);
-    this->pb_clt_choose_path = new QPushButton(tr("choose collection path"), this->gb_clt);
+    this->pb_clt_choose_path = new QPushButton(tr("..."), this->gb_clt);
     this->pb_take = new QPushButton(tr("take"), this->gb_clt);
 
+    vl = new QVBoxLayout;
+    gl = new QGridLayout;
+    gl->addWidget(new QLabel(tr("save path:"), this->gb_clt), 0, 0);
+    gl->addWidget(this->le_clt_path, 0, 1);
+    gl->addWidget(this->pb_clt_choose_path, 0, 2);
+    gl->addWidget(new QLabel(tr("ID:"), this->gb_clt), 1, 0);
+    gl->addWidget(this->sb_clt_id, 1, 1);
+    vl->addLayout(gl);
+    vl->addWidget(this->pb_take);
+    this->gb_clt->setLayout(vl);
+
+    vl = new QVBoxLayout;
+    vl->addWidget(this->gb_cam);
+    vl->addWidget(this->gb_clt);
+    this->wgt_right->setLayout(vl);
+
+    this->wgt_camera = new camera_widget(this);
+    hl = new QHBoxLayout;
+    vl = new QVBoxLayout;
+    hl->addWidget(this->wgt_camera);
+    hl->addWidget(this->wgt_right);
+    this->setLayout(hl);
+
+    this->wgt_right->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     this->pb_close_cam->setDisabled(true);
-    //this->le_clt_path->setDisabled(true);
-
-
-    this->vl = new QVBoxLayout;
-    this->hl = new QHBoxLayout;
-
-    this->hl->addWidget(new QLabel(tr("save path:"), this->gb_clt));
-    this->hl->addWidget(this->le_clt_path);
-    this->vl->addLayout(this->hl);
-    this->vl->addWidget(this->pb_clt_choose_path);
-    this->hl = new QHBoxLayout;
-    this->hl->addWidget(new QLabel(tr("ID:"), this->gb_clt));
-    this->hl->addWidget(this->sb_clt_id);
-    this->vl->addLayout(this->hl);
-    this->vl->addWidget(this->pb_take);
-    this->gb_clt->setLayout(this->vl);
-
-    this->vl = new QVBoxLayout;
-    this->hl = new QHBoxLayout;
-    this->hl->addWidget(new QLabel(tr("camera device:"), this->gb_cam));
-    this->hl->addWidget(this->sb_dev_no);
-    this->vl->addLayout(this->hl);
-    this->hl = new QHBoxLayout;
-    this->hl->addWidget(this->pb_open_cam);
-    this->hl->addWidget(this->pb_close_cam);
-    this->vl->addLayout(this->hl);
-    this->gb_cam->setLayout(this->vl);
-
-    this->hl = new QHBoxLayout;
-    this->vl = new QVBoxLayout;
-    this->hl->addWidget(this->wgt_camera);
-    this->vl->addWidget(this->gb_cam);
-    this->vl->addWidget(this->gb_clt);
-    this->hl->addLayout(this->vl);
-    this->setLayout(this->hl);
 
     connect(this->pb_open_cam, &QPushButton::clicked, this, &collection_widget::open_cam);
     connect(this->pb_close_cam, &QPushButton::clicked, this, &collection_widget::close_cam);
@@ -121,7 +126,7 @@ void collection_widget::save_face(const IplImage *faceimg, int id)
     Mat m_img(faceimg, true);
     if (!this->id_map.contains(id))
         this->id_map.insert(id, 0);
-    imwrite((this->le_clt_path->text() + "/" + QString::number(id) + "_" + QString::number(this->id_map[id]) + ".png").toLatin1().constData(), m_img);
+    imwrite((this->le_clt_path->text() + "/" + QString::number(id) + "_" + QString::number(this->id_map[id]) + ".png").toLocal8Bit().constData(), m_img);
     this->id_map[id]++;
 }
 
@@ -133,6 +138,19 @@ void collection_widget::take()
     static QImage face_marked_qimg;
     static face_detected_dlg *fdw;
     static bool usy = true;
+    if (!this->wgt_camera->is_started()) {
+        QMessageBox msgBox;
+        msgBox.setText("Start Camera First!");
+        msgBox.exec();
+        return;
+    }
+    if (this->le_clt_path->text().isEmpty()) {
+        QMessageBox msgBox;
+        msgBox.setText("Set Save Path!");
+        msgBox.exec();
+        return;
+    }
+
     m_tmp = this->wgt_camera->get_frame_mat().clone();
     cvtColor(m_tmp, m_tmp, COLOR_BGR2GRAY);
     iplframe = m_tmp;
