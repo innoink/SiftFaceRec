@@ -48,7 +48,7 @@ HEADERS  += \
 unix{
     CONFIG += link_pkgconfig
     PKGCONFIG += opencv
-    LIBS += -lvl
+    LIBS += -lvl -lunqlite
 }
 win32{
     INCLUDEPATH += "C:/opencv/opencv/build/include/opencv" \
