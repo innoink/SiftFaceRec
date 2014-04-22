@@ -25,9 +25,9 @@ SOURCES += main.cpp\
     face_detector/face_detector.cpp \
     ui/train_widget.cpp \
     face_recognizer/face_recognizer.cpp \
-    face_collection/face_collection.cpp \
     ui/collection_widget_new.cpp \
-    ui/sift_demo_widget.cpp
+    ui/sift_demo_widget.cpp \
+    face_collection/face_collection.cpp
 
 HEADERS  += \
     ui/fancy_widget/fancytabwidget.h \
@@ -41,9 +41,9 @@ HEADERS  += \
     face_detector/face_detector.h \
     ui/train_widget.h \
     face_recognizer/face_recognizer.h \
-    face_collection/face_collection.h \
     ui/collection_widget_new.h \
-    ui/sift_demo_widget.h
+    ui/sift_demo_widget.h \
+    face_collection/face_collection.h
 
 unix{
     CONFIG += link_pkgconfig
