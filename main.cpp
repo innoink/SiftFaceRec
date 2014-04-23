@@ -3,7 +3,6 @@
 
 #include "face_collection/face_collection.h"
 
-/*
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -12,8 +11,9 @@ int main(int argc, char *argv[])
 
     return a.exec();
 }
-*/
 
+
+/*
 int main()
 {
     face_collection fc;
@@ -35,3 +35,4 @@ int main()
     fc.close();
     return 0;
 }
+*/

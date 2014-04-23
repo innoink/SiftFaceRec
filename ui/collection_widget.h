@@ -1,5 +1,5 @@
-#ifndef COLLECTION_WIDGET_H
-#define COLLECTION_WIDGET_H
+#ifndef COLLECTION_WIDGET_NEW_H
+#define COLLECTION_WIDGET_NEW_H
 
 #include <QWidget>
 #include <QDialog>
@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QSpinBox>
 #include <QHash>
+#include "face_collection/face_collection.h"
 #include "face_detector/face_detector.h"
 #include "ui/camera_widget.h"
 
@@ -20,13 +21,25 @@ class face_detected_dlg : public QDialog
         Q_OBJECT
     public:
         explicit face_detected_dlg(bool *usy, QImage &face, QWidget *parent = 0);
-    signals:
     private:
         bool *user_says_yes;
 
         QLabel *lb_face;
         QPushButton *pb_yes;
         QPushButton *pb_no;
+};
+
+class fc_create_dlg : public QDialog
+{
+        Q_OBJECT
+    public:
+        explicit fc_create_dlg(bool *is_created, face_collection &fc, QWidget *parent = 0);
+    private:
+        QLineEdit *le_name;
+        QLineEdit *le_path;
+        QPushButton *pb_path;
+        QPushButton *pb_create;
+        QPushButton *pb_cancle;
 };
 
 class collection_widget : public QWidget
@@ -36,15 +49,18 @@ class collection_widget : public QWidget
         explicit collection_widget(QWidget *parent = 0);
 
     signals:
-
+        void clt_loaded();
+        void clt_closed();
     public slots:
         void open_cam();
         void close_cam();
-        void choose_path();
+        void load_clt();
+        void create_clt();
+        void close_clt();
+
         void take();
     private:
-        void save_face(const Mat &faceimg, int id);
-        void save_face(const IplImage *faceimg, int id);
+
     private:
         camera_widget *wgt_camera;
 
@@ -56,16 +72,18 @@ class collection_widget : public QWidget
         QPushButton *pb_close_cam;
 
         QGroupBox *gb_clt;
-        QLineEdit *le_clt_path;
-        QPushButton *pb_clt_choose_path;
+        QPushButton *pb_load_clt, *pb_create_clt, *pb_close_clt;
+
+        QLabel *lb_clt_file;
+        QLabel *lb_clt_name;
+
         QSpinBox *sb_clt_id;
         QPushButton *pb_take;
 
         face_detector fd;
+        face_collection fc;
 
-        QHash<int, int> id_map;
-
-
+        QString clt_recent_path;
 };
 
-#endif // COLLECTION_WIDGET_H
+#endif // COLLECTION_WIDGET_NEW_H

@@ -70,6 +70,7 @@ class face_collection
         int get_id_next_face(int n);
         int get_id_last_face();
         std::string error_string();
+        std::string file_path();
 
 
     private:
@@ -105,6 +106,7 @@ class face_collection
 
     private:
 
+        std::string filepath;
         unqlite *clt_db;//collection database
         std::string err_str;
 

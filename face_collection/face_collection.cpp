@@ -3,6 +3,7 @@
 face_collection::face_collection()
 {
     this->clt_db = NULL;
+    this->filepath = std::string();
     this->err_str = std::string();
 }
 face_collection::~face_collection()
@@ -19,8 +20,10 @@ void face_collection::save()
 
 void face_collection::close()
 {
-    if (this->clt_db != NULL)
+    if (this->clt_db != NULL) {
         unqlite_close(this->clt_db);
+        this->filepath.clear();
+    }
 }
 
 bool face_collection::handle_rc(int rc, bool print)
@@ -47,6 +50,7 @@ bool face_collection::load(const std::string &filepath)
     int rc;
     rc = unqlite_open(&this->clt_db, filepath.c_str(), UNQLITE_OPEN_READWRITE);
     if (!this->handle_rc(rc, true)) return false;
+    this->filepath = filepath;
     return true;
 }
 
@@ -63,6 +67,7 @@ bool face_collection::create(const std::string &name, const std::string &filepat
     if (!this->handle_rc(rc, true)) return false;
     rc = unqlite_kv_store(this->clt_db, "info:facecnt", -1, &zero, sizeof(fcint_t));
     if (!this->handle_rc(rc, true)) return false;
+    this->filepath = filepath;
     return true;
 }
 
@@ -218,6 +223,15 @@ bool face_collection::id_face_cnt(int id, int *cnt)
 {
     *cnt = this->read_id_facecnt(id);
     return true;
+}
+
+std::string face_collection::error_string()
+{
+    return this->err_str;
+}
+std::string face_collection::file_path()
+{
+    return this->filepath;
 }
 
 void face_collection::byte2mat(const char *buf, fcint_t len, cv::Mat &mat) const

@@ -21,13 +21,12 @@ SOURCES += main.cpp\
     ui/camera_widget.cpp \
     utils/rqueue.c \
     utils/img_fmt_cvt.cpp \
-    ui/collection_widget.cpp \
     face_detector/face_detector.cpp \
     ui/train_widget.cpp \
     face_recognizer/face_recognizer.cpp \
-    ui/collection_widget_new.cpp \
     ui/sift_demo_widget.cpp \
-    face_collection/face_collection.cpp
+    face_collection/face_collection.cpp \
+    ui/collection_widget.cpp
 
 HEADERS  += \
     ui/fancy_widget/fancytabwidget.h \
@@ -37,13 +36,12 @@ HEADERS  += \
     ui/camera_widget.h \
     utils/rqueue.h \
     utils/img_fmt_cvt.h \
-    ui/collection_widget.h \
     face_detector/face_detector.h \
     ui/train_widget.h \
     face_recognizer/face_recognizer.h \
-    ui/collection_widget_new.h \
     ui/sift_demo_widget.h \
-    face_collection/face_collection.h
+    face_collection/face_collection.h \
+    ui/collection_widget.h
 
 unix{
     CONFIG += link_pkgconfig
