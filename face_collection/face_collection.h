@@ -10,7 +10,7 @@
 #include <cstdio>
 
 extern "C" {
-#include <unqlite.h>
+#include <vedis.h>
 }
 
 /*
@@ -19,31 +19,20 @@ extern "C" {
 */
 
 /*
- info:name => collection name
- info:idcnt:4 byte => collection id count
- info:facecnt:4 byte => collection face count
- id:1:name => id1 name
- id:1:facecnt:4 byte => id1 face count
- id:1:face:bitmap:4 byte(only the first byte is used) => which face:key is used.
- id:1:face:1:data
- id:1:face:2:data
- id:1:face:3:data
- .......
- id:1:face:256:data
- id:2:face:bitmap:4 byte
- id:2:face:1:data
- id:2:face:2:data
- .......
- .......
- id:n:face:x:data
+ str  collection:name
+ set  collection:idset
+ str  id:1:name
+ set  id:1:faceset
+ hash id:1:faces 0 xxx 1 xxx...
+
+ id:2:name
+ id:2:faceset
+ id:3:name
 */
 
 #define FC_IMG_FORMAT ".png"
 #define FC_IMG_PARAM_ID CV_IMWRITE_PNG_COMPRESSION
 #define FC_IMG_PARAM_VALUE 0
-
-#define FC_ID_FACE_MIN 1
-#define FC_ID_FACE_MAX 256
 
 typedef int32_t fcint_t;
 
@@ -66,9 +55,6 @@ class face_collection
         bool id_name(int id, std::string &name);
         bool id_rename(int id, const std::string &name);
         bool id_face_cnt(int id, int *cnt);
-        int get_id_first_face();
-        int get_id_next_face(int n);
-        int get_id_last_face();
         std::string error_string();
         std::string file_path();
 
@@ -80,34 +66,20 @@ class face_collection
         void byte2mat(const char *buf, fcint_t len, cv::Mat &mat) const;
         void mat2byte(const cv::Mat &mat, std::vector<unsigned char> &buf) const;
 
-        // range of n : [1,256]
-        unsigned bitmap_get(const char *bitmap, unsigned n);
-        void bitmap_set_0(char *bitmap, unsigned n);
-        void bitmap_set_1(char *bitmap, unsigned n);
-
         bool id_exist(fcint_t id);
         bool id_face_exist(fcint_t id, fcint_t facenum);
 
-        std::string read_info_name();
-        void write_info_name(const std::string &name);
-        fcint_t read_info_idcnt();
-        void write_info_idcnt(fcint_t cnt);
-        fcint_t read_info_facecnt();
-        void write_info_facecnt(fcint_t cnt);
         std::string read_id_name(fcint_t id);
         void write_id_name(fcint_t id, const std::string &name);
-        fcint_t read_id_facecnt(fcint_t id);
-        void write_id_facecnt(fcint_t id, fcint_t facecnt);
-        void read_id_face_bitmap(fcint_t id, char *bitmap);
-        void write_id_face_bitmap_0(fcint_t id, fcint_t n);
-        void write_id_face_bitmap_1(fcint_t id, fcint_t n);
+
+
         void read_id_face(fcint_t id, fcint_t n, cv::Mat &face);
         void write_id_face(fcint_t id, fcint_t n, const cv::Mat &face);
 
     private:
 
         std::string filepath;
-        unqlite *clt_db;//collection database
+        vedis *clt_db;//collection database
         std::string err_str;
 
 };

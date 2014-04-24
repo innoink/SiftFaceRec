@@ -9,19 +9,19 @@ face_collection::face_collection()
 face_collection::~face_collection()
 {
     if (this->clt_db != NULL)
-        unqlite_close(this->clt_db);
+        vedis_close(this->clt_db);
 }
 
 void face_collection::save()
 {
     if (this->clt_db != NULL)
-        unqlite_commit(this->clt_db);
+        vedis_commit(this->clt_db);
 }
 
 void face_collection::close()
 {
     if (this->clt_db != NULL) {
-        unqlite_close(this->clt_db);
+        vedis_close(this->clt_db);
         this->filepath.clear();
     }
 }
@@ -29,12 +29,12 @@ void face_collection::close()
 bool face_collection::handle_rc(int rc, bool print)
 {
     this->err_str.clear();
-    if (rc == UNQLITE_OK) {
+    if (rc == VEDIS_OK) {
         return true;
     } else {
         const char *buf;
         int len;
-        unqlite_config(this->clt_db, UNQLITE_CONFIG_ERR_LOG, &buf, &len);
+        vedis_config(this->clt_db, VEDIS_CONFIG_ERR_LOG, &buf, &len);
         if (len > 0) {
             this->err_str.append(buf);
         }
@@ -48,7 +48,7 @@ bool face_collection::handle_rc(int rc, bool print)
 bool face_collection::load(const std::string &filepath)
 {
     int rc;
-    rc = unqlite_open(&this->clt_db, filepath.c_str(), UNQLITE_OPEN_READWRITE);
+    rc = vedis_open(&this->clt_db, filepath.c_str());
     if (!this->handle_rc(rc, true)) return false;
     this->filepath = filepath;
     return true;
@@ -57,15 +57,12 @@ bool face_collection::load(const std::string &filepath)
 bool face_collection::create(const std::string &name, const std::string &filepath)
 {
     int rc;
-    fcint_t zero;
 
-    rc = unqlite_open(&this->clt_db, filepath.c_str(), UNQLITE_OPEN_CREATE);
+    rc = vedis_open(&this->clt_db, filepath.c_str());
     if (!this->handle_rc(rc, true)) return false;
-    rc = unqlite_kv_store(this->clt_db, "info:name", -1, name.data(), name.size() + 1);
+    rc = vedis_exec_fmt(this->clt_db, "SET %s '%s'", "collection:name", name.c_str());
     if (!this->handle_rc(rc, true)) return false;
-    rc = unqlite_kv_store(this->clt_db, "info:idcnt", -1, &zero, sizeof(fcint_t));
-    if (!this->handle_rc(rc, true)) return false;
-    rc = unqlite_kv_store(this->clt_db, "info:facecnt", -1, &zero, sizeof(fcint_t));
+    rc = vedis_exec_fmt(this->clt_db, "SADD %s %d", "collection:idset", 0);
     if (!this->handle_rc(rc, true)) return false;
     this->filepath = filepath;
     return true;
@@ -74,66 +71,32 @@ bool face_collection::create(const std::string &name, const std::string &filepat
 bool face_collection::new_id(int id, const std::string &name)
 {
     int rc;
-    char key[32];
-    char bitmap[sizeof(fcint_t)] = {0};
-    fcint_t zero = 0;
     //first, check if this id is already exist.
     if (this->id_exist(id)) return false;
 
     //second, create basic structure
-    std::sprintf(key, "id:%d:name", id);
-    rc = unqlite_kv_store(this->clt_db, key, -1, name.data(), name.size() + 1);
-    if (!this->handle_rc(rc, true)) return false;
-    std::sprintf(key, "id:%d:facecnt", id);
-    rc = unqlite_kv_store(this->clt_db, key, -1, &zero, sizeof(fcint_t));
-    if (!this->handle_rc(rc, true)) return false;
-    std::sprintf(key, "id:%d:face:bitmap", id);
-    rc = unqlite_kv_store(this->clt_db, key, -1, bitmap, sizeof(fcint_t));
-    if (!this->handle_rc(rc, true)) return false;
-    //this step can be avoided.
-    for (int i = FC_ID_FACE_MIN; i <= FC_ID_FACE_MAX; i++) {
-        std::sprintf(key, "id:%d:face:%d:data", id, i);
-        rc = unqlite_kv_store(this->clt_db, key, -1, &zero, sizeof(fcint_t));
-        if (!this->handle_rc(rc, true)) return false;
-    }
-    //update info:idcnt
-    fcint_t id_cnt = this->read_info_idcnt();
-    id_cnt++;
-    rc = unqlite_kv_store(this->clt_db, "info:idcnt", -1, &id_cnt, sizeof(id_cnt));
-    if (!this->handle_rc(rc, true)) return false;
+    rc = vedis_exec_fmt(this->clt_db, "SADD %s %d", "collection:idset", id);
+
+    rc = vedis_exec_fmt(this->clt_db, "SET id:%d:name '%s'", id, name.c_str());
+
+    rc = vedis_exec_fmt(this->clt_db, "SADD id:%d:faceset %d", id, 0);
+
+    //no use:
+    //rc = vedis_exec_fmt(this->clt_db, "HSET id:%d:faces %d %s", id, 0, "");
+
     return true;
 }
 
 bool face_collection::delete_id(int id)
 {
     int rc;
-    char key[32];
-    fcint_t id_fcnt, idcnt, fcnt;
+
     //first, check if this id is not exist.
     if (!this->id_exist(id)) return false;
 
-    //
-    id_fcnt = this->read_id_facecnt(id);
-    idcnt = this->read_info_idcnt();
-    fcnt = this->read_info_facecnt();
-    //
-    std::sprintf(key, "id:%d:facecnt", id);
-    rc = unqlite_kv_delete(this->clt_db, key, -1);
-    if (!this->handle_rc(rc, true)) return false;
-    std::sprintf(key, "id:%d:face:bitmap", id);
-    rc = unqlite_kv_delete(this->clt_db, key, -1);
-    if (!this->handle_rc(rc, true)) return false;
-    for (int i = FC_ID_FACE_MIN; i <= FC_ID_FACE_MAX; ++i) {
-        std::sprintf(key, "id:%d:face:%d:data", id, i);
-        rc = unqlite_kv_delete(this->clt_db, key, -1);
-        if (!this->handle_rc(rc, true)) return false;
-    }
-    //update info:idcnt
-    idcnt--;
-    this->write_info_idcnt(idcnt);
-    //update info:facecnt
-    fcnt -= id_fcnt;
-    this->write_info_facecnt(fcnt);
+    rc = vedis_exec_fmt(this->clt_db, "DEL id:%d:name id:%d:faces id:%d:faceset", id, id, id);
+    rc = vedis_exec_fmt(this->clt_db, "SREM %s %d", "collection:idset", id);
+
     return true;
 
 }
@@ -250,195 +213,55 @@ void face_collection::mat2byte(const cv::Mat &mat, std::vector<unsigned char> &b
     //...
 }
 
-unsigned face_collection::bitmap_get(const char *bitmap, unsigned n)
-{
-    n--;
-    return bitmap[n >> 3] >> (7 - (n & (8 - 1))) & 1;
-}
-void face_collection::bitmap_set_0(char *bitmap, unsigned n)
-{
-    n--;
-    bitmap[n >> 3] &= ~(1 << (7 - (n & (8 - 1))));
-}
-void face_collection::bitmap_set_1(char *bitmap, unsigned n)
-{
-    n--;
-    bitmap[n >> 3] |= 1 << (7 - (n & (8 - 1)));
-}
 
-std::string face_collection::read_info_name()
-{
-    std::string name;
-    int rc;
-    rc = unqlite_kv_fetch_callback(this->clt_db, "info:name", -1,
-         [](const void *d, unsigned int n, void *name)
-         {
-             (void)n;
-             ((std::string *)name)->clear();
-             ((std::string *)name)->append((const char *)d);
-             return UNQLITE_OK;
-         }
-         , &name);
-    this->handle_rc(rc, true);
-    return name;
-}
-
-void face_collection::write_info_name(const std::string &name)
-{
-    int rc;
-    rc = unqlite_kv_store(this->clt_db, "info:name", -1, name.data(), name.size() + 1);
-    this->handle_rc(rc, true);
-}
-
-fcint_t face_collection::read_info_idcnt()
-{
-    fcint_t cnt;
-    int rc;
-    unqlite_int64 len;
-    rc = unqlite_kv_fetch(this->clt_db, "info:idcnt", -1, &cnt, &len);
-    this->handle_rc(rc, true);
-    return cnt;
-}
-
-void face_collection::write_info_idcnt(fcint_t cnt)
-{
-    int rc;
-    fcint_t idcnt = cnt;
-    rc = unqlite_kv_store(this->clt_db, "info:idcnt", -1, &idcnt, sizeof(fcint_t));
-    this->handle_rc(rc, true);
-}
-
-fcint_t face_collection::read_info_facecnt()
-{
-    fcint_t cnt;
-    int rc;
-    unqlite_int64 len;
-    rc = unqlite_kv_fetch(this->clt_db, "info:facecnt", -1, &cnt, &len);
-    this->handle_rc(rc, true);
-    return cnt;
-}
-
-void face_collection::write_info_facecnt(fcint_t cnt)
-{
-    int rc;
-    fcint_t idcnt = cnt;
-    rc = unqlite_kv_store(this->clt_db, "info:facecnt", -1, &idcnt, sizeof(fcint_t));
-    this->handle_rc(rc, true);
-}
 
 bool face_collection::id_exist(fcint_t id)
 {
     int rc;
-    char key[32];
-    unqlite_int64 len;
+    vedis_value *result;
 
-    std::sprintf(key, "id:%d:name", id);
-    rc = unqlite_kv_fetch(this->clt_db, key, -1, NULL, &len);
-    if (rc != UNQLITE_NOTFOUND) {
-        this->handle_rc(rc, true);
-        return true;
-    } else {
-        return false;
-    }
+    rc = vedis_exec_fmt(this->clt_db, "SISMEMBER %s %d", "collection:idset", id);
+    //handle rc...
+
+    vedis_exec_result(this->clt_db, &result);
+    return vedis_value_to_bool(result);
 }
 
 bool face_collection::id_face_exist(fcint_t id, fcint_t facenum)
 {
-    char bitmap[sizeof(fcint_t)];
+    int rc;
+    vedis_value *result;
+    if (!this->id_exist(id)) return false;
+    rc = vedis_exec_fmt(this->clt_db, "SISMEMBER id:%d:faceset %d", id, facenum);
+    //handle rc...
 
-    this->read_id_face_bitmap(id, bitmap);
-    return this->bitmap_get(bitmap, facenum) == 1;
+    vedis_exec_result(this->clt_db, &result);
+    return vedis_value_to_bool(result);
 }
 
 std::string face_collection::read_id_name(fcint_t id)
 {
-    std::string name;
     int rc;
-    char key[32];
-    std::sprintf(key, "id:%d:name", id);//not safe!!
-    rc = unqlite_kv_fetch_callback(this->clt_db, key, -1,
-         [](const void *d, unsigned int n, void *p)
-         {
-             (void)n;
-             ((std::string *)p)->clear();
-             ((std::string *)p)->append((const char *)d);
-             return UNQLITE_OK;
-         }
-         , &name);
-    this->handle_rc(rc, true);
-    return name;
+    vedis_value *result;
+
+    if (!this->id_exist(id))
+        return std::string;
+    rc = vedis_exec_fmt(this->clt_db, "GET id:%d:name", id);
+    //handle rc...
+
+    vedis_exec_result(this->clt_db, &result);
+
+    return std::string(vedis_value_to_string(result));
 }
 
 void face_collection::write_id_name(fcint_t id, const std::string &name)
 {
     int rc;
-    char key[32];
-    std::sprintf(key, "id:%d:name", id);//not safe!!
-    rc = unqlite_kv_store(this->clt_db, key, -1, name.data(), name.size() + 1);
-    this->handle_rc(rc, true);
-}
+    if (!this->id_exist(id))
+        return;
 
-void face_collection::read_id_face_bitmap(fcint_t id, char *bitmap)
-{
-    int rc;
-    char key[32];
-    unqlite_int64 len;
-    std::sprintf(key, "id:%d:face:bitmap", id);//not safe!!
-
-    rc = unqlite_kv_fetch(this->clt_db, key, -1, bitmap, &len);
-    this->handle_rc(rc, true);
-}
-
-void face_collection::write_id_face_bitmap_0(fcint_t id, fcint_t n)
-{
-    int rc;
-    char bitmap[sizeof(fcint_t)];
-    char key[32];
-    unqlite_int64 len;
-    std::sprintf(key, "id:%d:face:bitmap", id);
-    rc = unqlite_kv_fetch(this->clt_db, key, -1, bitmap, &len);
-    this->handle_rc(rc, true);
-    this->bitmap_set_0(bitmap, n);
-    rc = unqlite_kv_store(this->clt_db, key, -1, bitmap, sizeof(fcint_t));
-    this->handle_rc(rc, true);
-}
-
-void face_collection::write_id_face_bitmap_1(fcint_t id, fcint_t n)
-{
-    int rc;
-    char bitmap[sizeof(fcint_t)];
-    char key[32];
-    unqlite_int64 len;
-    std::sprintf(key, "id:%d:face:bitmap", id);
-    rc = unqlite_kv_fetch(this->clt_db, key, -1, bitmap, &len);
-    this->handle_rc(rc, true);
-    this->bitmap_set_1(bitmap, n);
-    rc = unqlite_kv_store(this->clt_db, key, -1, bitmap, sizeof(fcint_t));
-    this->handle_rc(rc, true);
-}
-
-fcint_t face_collection::read_id_facecnt(fcint_t id)
-{
-    int rc;
-    char key[32];
-    unqlite_int64 len;
-    fcint_t facecnt;
-
-    std::sprintf(key, "id:%d:facecnt", id);
-    rc = unqlite_kv_fetch(this->clt_db, key, -1, &facecnt, &len);
-    this->handle_rc(rc, true);
-    return facecnt;
-}
-
-void face_collection::write_id_facecnt(fcint_t id, fcint_t facecnt)
-{
-    int rc;
-    char key[32];
-    fcint_t cnt = facecnt;
-
-    std::sprintf(key, "id:%d:facecnt", id);
-    rc = unqlite_kv_store(this->clt_db, key, -1, &cnt, sizeof(fcint_t));
-    this->handle_rc(rc, true);
+    rc = vedis_exec_fmt(this->clt_db, "SET id:%d:name '%s'", id, name.c_str());
+    //handle rc...
 }
 
 void face_collection::read_id_face(fcint_t id, fcint_t n, cv::Mat &face)
