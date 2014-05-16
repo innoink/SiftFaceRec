@@ -2,10 +2,15 @@
 #include "ui/main_window.h"
 
 #include "face_collection/face_collection.h"
+#include <QDebug>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    vedis_lib_config(VEDIS_LIB_CONFIG_THREAD_LEVEL_MULTI);
+    qDebug() << vedis_lib_is_threadsafe();
+
+    fprintf(stderr, "%f\n", FLT_MAX);
     main_window w;
     w.show();
 

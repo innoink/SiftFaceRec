@@ -33,7 +33,7 @@ class fc_create_dlg : public QDialog
 {
         Q_OBJECT
     public:
-        explicit fc_create_dlg(bool *is_created, face_collection &fc, QWidget *parent = 0);
+        explicit fc_create_dlg(bool *is_created, QWidget *parent = 0);
     private:
         QLineEdit *le_name;
         QLineEdit *le_path;
@@ -47,18 +47,20 @@ class collection_widget : public QWidget
         Q_OBJECT
     public:
         explicit collection_widget(QWidget *parent = 0);
+        void set_fc(face_collection *fc);
 
     signals:
-        void clt_loaded();
-        void clt_closed();
+        void take_done();
+
     public slots:
         void open_cam();
         void close_cam();
-        void load_clt();
-        void create_clt();
-        void close_clt();
 
         void take();
+
+
+        void clt_loaded();
+        void clt_closed();
     private:
 
     private:
@@ -72,16 +74,16 @@ class collection_widget : public QWidget
         QPushButton *pb_close_cam;
 
         QGroupBox *gb_clt;
-        QPushButton *pb_load_clt, *pb_create_clt, *pb_close_clt;
 
         QLabel *lb_clt_file;
         QLabel *lb_clt_name;
 
         QSpinBox *sb_clt_id;
+        QSpinBox *sb_clt_face;
         QPushButton *pb_take;
 
         face_detector fd;
-        face_collection fc;
+        face_collection *fc;
 
         QString clt_recent_path;
 };

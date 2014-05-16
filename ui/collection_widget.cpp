@@ -28,7 +28,7 @@ face_detected_dlg::face_detected_dlg(bool *usy, QImage &face, QWidget *parent) :
 
 }
 
-fc_create_dlg::fc_create_dlg(bool *is_created, face_collection &fc, QWidget *parent) :
+fc_create_dlg::fc_create_dlg(bool *is_created, QWidget *parent) :
     QDialog(parent)
 {
     this->le_name = new QLineEdit(this);
@@ -86,13 +86,14 @@ fc_create_dlg::fc_create_dlg(bool *is_created, face_collection &fc, QWidget *par
     connect(this->pb_create, &QPushButton::clicked,
             [&]()
             {
-                fc.close();
+                face_collection fc;
                 if (!fc.create(this->le_name->text().toStdString(), this->le_path->text().toStdString())) {
                     QMessageBox::critical(NULL, tr("Creation Failed!"), fc.error_string().c_str(), QMessageBox::Yes, QMessageBox::Yes);
                     *is_created = false;
                     this->close();
                 } else {
                     *is_created = true;
+                    fc.close();
                     this->close();
 
                 }
@@ -130,26 +131,23 @@ collection_widget::collection_widget(QWidget *parent) :
     this->gb_cam->setLayout(vl);
 
     this->gb_clt = new QGroupBox(tr("collection"), this->wgt_right);
-    this->pb_load_clt = new QPushButton(tr("Load"), this->gb_clt);
-    this->pb_create_clt = new QPushButton(tr("Create"), this->gb_clt);
-    this->pb_close_clt = new QPushButton(tr("close"), this->gb_clt);
     this->lb_clt_file = new QLabel(this->gb_clt);
     this->lb_clt_name = new QLabel(this->gb_clt);
     this->sb_clt_id = new QSpinBox(this->gb_clt);
+    this->sb_clt_face = new QSpinBox(this->gb_clt);
     this->pb_take = new QPushButton(tr("take"), this->gb_clt);
 
     vl = new QVBoxLayout;
     gl = new QGridLayout;
     hl = new QHBoxLayout;
-    hl->addWidget(this->pb_load_clt);
-    hl->addWidget(this->pb_create_clt);
-    hl->addWidget(this->pb_close_clt);
     gl->addWidget(new QLabel(tr("Collection file:"), this->gb_clt), 0, 0, Qt::AlignLeft);
     gl->addWidget(this->lb_clt_file, 0, 1, Qt::AlignRight);
     gl->addWidget(new QLabel(tr("Collection name:"), this->gb_clt), 1, 0, Qt::AlignLeft);
     gl->addWidget(this->lb_clt_name, 1, 1, Qt::AlignRight);
     gl->addWidget(new QLabel(tr("ID:"), this->gb_clt), 2, 0, Qt::AlignLeft);
     gl->addWidget(this->sb_clt_id, 2, 1, Qt::AlignRight);
+    gl->addWidget(new QLabel(tr("Face:"), this->gb_clt), 3, 0, Qt::AlignLeft);
+    gl->addWidget(this->sb_clt_face, 3, 1, Qt::AlignRight);
     vl->addLayout(hl);
     vl->addLayout(gl);
     vl->addWidget(this->pb_take);
@@ -168,44 +166,34 @@ collection_widget::collection_widget(QWidget *parent) :
     this->setLayout(hl);
 
     this->pb_close_cam->setDisabled(true);
-    this->pb_close_clt->setDisabled(true);
     this->pb_take->setDisabled(true);
     this->lb_clt_file->setTextInteractionFlags(Qt::TextSelectableByMouse);
     this->lb_clt_name->setTextInteractionFlags(Qt::TextSelectableByMouse);
     this->wgt_right->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-    this->clt_recent_path = QString("./");
-
     connect(this->pb_open_cam, &QPushButton::clicked, this, &collection_widget::open_cam);
     connect(this->pb_close_cam, &QPushButton::clicked, this, &collection_widget::close_cam);
-    connect(this->pb_load_clt, &QPushButton::clicked, this, &collection_widget::load_clt);
-    connect(this->pb_create_clt, &QPushButton::clicked, this, &collection_widget::create_clt);
-    connect(this->pb_close_clt, &QPushButton::clicked, this, &collection_widget::close_clt);
     connect(this->pb_take, &QPushButton::clicked, this, &collection_widget::take);
+}
 
-    connect(this, &collection_widget::clt_loaded,
-            [this]()
-            {
-                this->pb_load_clt->setDisabled(true);
-                this->pb_create_clt->setDisabled(true);
-                this->pb_close_clt->setEnabled(true);
-                QString fname(this->fc.file_path().c_str());
-                this->lb_clt_file->setText(fname.right(fname.length() - fname.lastIndexOf('/') - 1));
-                std::string name;
-                this->fc.clt_name(name);
-                this->lb_clt_name->setText(name.c_str());
-                this->pb_take->setEnabled(true);
-            });
-    connect(this, &collection_widget::clt_closed,
-            [this]()
-            {
-                this->pb_load_clt->setEnabled(true);
-                this->pb_create_clt->setEnabled(true);
-                this->pb_close_clt->setDisabled(true);
-                this->lb_clt_file->setText("");
-                this->lb_clt_name->setText("");
-                this->pb_take->setDisabled(true);
-            });
+void collection_widget::clt_loaded()
+{
+    QString fname(this->fc->file_path().c_str());
+    this->lb_clt_file->setText(fname.right(fname.length() - fname.lastIndexOf('/') - 1));
+    this->lb_clt_name->setText(fc->clt_name().c_str());
+    this->pb_take->setEnabled(true);
+}
+
+void collection_widget::clt_closed()
+{
+    this->lb_clt_file->setText("");
+    this->lb_clt_name->setText("");
+    this->pb_take->setDisabled(true);
+}
+
+void collection_widget::set_fc(face_collection *fc)
+{
+    this->fc = fc;
 }
 
 void collection_widget::open_cam()
@@ -231,37 +219,6 @@ void collection_widget::close_cam()
     }
 }
 
-void collection_widget::load_clt()
-{
-    QString clt_path;
-    clt_path = QFileDialog::getOpenFileName(this, tr("choose collection"), this->clt_recent_path, tr("Face Collection Files (*.fc)"));
-    if (clt_path.isEmpty()) return;
-    fc.close();
-    if (!fc.load(clt_path.toStdString())) {
-        QMessageBox::critical(NULL, tr("Load Collection Error"), fc.error_string().c_str(), QMessageBox::Yes, QMessageBox::Yes);
-        return;
-    }
-    emit this->clt_loaded();
-}
-
-void collection_widget::create_clt()
-{
-    bool is_created = false;
-    fc_create_dlg *fccdlg;
-    fccdlg = new fc_create_dlg(&is_created, this->fc, this);
-    fccdlg->exec();
-    if (is_created) {
-        emit this->clt_loaded();
-    }
-}
-
-void collection_widget::close_clt()
-{
-    this->fc.close();
-    emit this->clt_closed();
-}
-
-
 void collection_widget::take()
 {
     static Mat m_tmp;
@@ -270,6 +227,7 @@ void collection_widget::take()
     static QImage face_marked_qimg;
     static face_detected_dlg *fdw;
     static bool usy = true;
+    int id, facenum;
     if (!this->wgt_camera->is_started()) {
         QMessageBox msgBox;
         msgBox.setText("Start Camera First!");
@@ -285,10 +243,16 @@ void collection_widget::take()
     mat2qimage(face_marked, face_marked_qimg);
     fdw = new face_detected_dlg(&usy, face_marked_qimg, this);
     fdw->exec();
-    if (usy) {
-    } else {
+    if (!usy) {
         delete fdw;
         return;
     }
+
+    id = this->sb_clt_id->value();
+    facenum = this->sb_clt_face->value();
+    Mat face_ = fd.get_face_img();
+    //imshow("test", face_);
+    fc->add_face(id, facenum, face_);
     delete fdw;
+    emit this->take_done();
 }

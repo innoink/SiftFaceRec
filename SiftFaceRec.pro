@@ -26,7 +26,9 @@ SOURCES += main.cpp\
     face_recognizer/face_recognizer.cpp \
     ui/sift_demo_widget.cpp \
     face_collection/face_collection.cpp \
-    ui/collection_widget.cpp
+    ui/collection_widget.cpp \
+    ui/clt_explorer_widget.cpp \
+    ui/match_widget.cpp
 
 HEADERS  += \
     ui/fancy_widget/fancytabwidget.h \
@@ -41,12 +43,14 @@ HEADERS  += \
     face_recognizer/face_recognizer.h \
     ui/sift_demo_widget.h \
     face_collection/face_collection.h \
-    ui/collection_widget.h
+    ui/collection_widget.h \
+    ui/clt_explorer_widget.h \
+    ui/match_widget.h
 
 unix{
     CONFIG += link_pkgconfig
     PKGCONFIG += opencv
-    LIBS += -lvl -lunqlite
+    LIBS += -lvl -lvedis
 }
 win32{
     INCLUDEPATH += "C:/opencv/opencv/build/include/opencv" \

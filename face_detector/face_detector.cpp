@@ -80,7 +80,7 @@ bool face_detector::get_face_parameters(Mat &matImg)
         area.top  = largestFace.y;
         area.bottom = largestFace.y + largestFace.height;
         /*********/
-        printf("left:%d, right: %d, top: %d, bottom: %d\n", area.left, area.right, area.top, area.bottom);
+        //printf("left:%d, right: %d, top: %d, bottom: %d\n", area.left, area.right, area.top, area.bottom);
         /*********/
         ///////////针对最大的脸检测人眼////////////////////////////////
         Mat smallImgROI;
@@ -139,7 +139,7 @@ bool face_detector::get_face_parameters(Mat &matImg)
 //        iris_point.yleft = iris_point.yright;
 //        iris_point.yright = tmpSwap;
         /******************/
-        printf("xleft: %d, xright: %d, yleft: %d, yright: %d\n", iris_point.xleft, iris_point.xright, iris_point.yleft, iris_point.yright);
+        //printf("xleft: %d, xright: %d, yleft: %d, yright: %d\n", iris_point.xleft, iris_point.xright, iris_point.yleft, iris_point.yright);
         /******************/
         //画出框到的人脸，验证调试用
         Point left_top, right_bottom;
