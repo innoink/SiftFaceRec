@@ -82,7 +82,7 @@ void face_recognizer::match(std::vector<sift_keypoint_descr_t> &kpds1, std::vect
         int bestk = -1;
 
         for (k2 = 0; k2 < kpds2.size(); ++k2) {
-            float acc;
+            float acc = 0;
             for (int i = 0; i < 128; ++i) {
                 float delta = kpds1.at(k1).descr[i] -
                               kpds2.at(k2).descr[i];
@@ -98,7 +98,7 @@ void face_recognizer::match(std::vector<sift_keypoint_descr_t> &kpds1, std::vect
             }
         }
         /* Lowe's method: accept the match only if unique. */
-        if(thresh * best < second_best &&
+        if(thresh * second_best > best &&
             bestk != -1) {
             fprintf(stderr, "k1=%d k2=%d score=%f\n", k1, bestk, best);
                 (*m_cnt)++;

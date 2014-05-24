@@ -54,21 +54,21 @@ void match_widget::match()
     te_info->clear();
     fr.train(img, kpds_test);
     print_kpds(kpds_test);
-    puts("=====================");
+    puts("=================================================================");
     te_info->append(QString("test img:\nkpds cnt=>%1").arg(kpds_test.size()));
     ids = fc->all_id();
     for (int i = 0; i < ids.size(); i++) {
         std::vector<int> faces;
         faces = fc->all_face(ids[i]);
         for (int j = 0; j < faces.size(); j++) {
-            int mcnt;
+            int mcnt = 0;
             std::vector<sift_keypoint_descr_t> kpds_clt;
             fc->get_train_data(ids[i], faces[j], kpds_clt);
             print_kpds(kpds_clt);
-            fr.match(kpds_test, kpds_clt, 0.9, &mcnt);
+            fr.match(kpds_test, kpds_clt, 0.6, &mcnt);
             te_info->append(QString("ID:%1 Face:%2 kpds cnt:%3 match cnt:%4")
                             .arg(ids[i]).arg(faces[j]).arg(kpds_clt.size()).arg(mcnt));
         }
     }
-leave_func();
+    leave_func();
 }
