@@ -65,9 +65,14 @@ void match_widget::match()
             std::vector<sift_keypoint_descr_t> kpds_clt;
             fc->get_train_data(ids[i], faces[j], kpds_clt);
             print_kpds(kpds_clt);
-            fr.match(kpds_test, kpds_clt, 0.6, &mcnt);
-            te_info->append(QString("ID:%1 Face:%2 kpds cnt:%3 match cnt:%4")
-                            .arg(ids[i]).arg(faces[j]).arg(kpds_clt.size()).arg(mcnt));
+            fr.match(false, kpds_test, kpds_clt, 0.75, &mcnt);
+            QString info = QString("ID:%1 Face:%2 kpds cnt:%3 match cnt:%4")
+                           .arg(ids[i]).arg(faces[j]).arg(kpds_clt.size()).arg(mcnt);
+            mcnt = 0;
+
+            fr.match(true, kpds_test, kpds_clt, 0.75, &mcnt);
+            info += QString("after :%1").arg(mcnt);
+            te_info->append(info);
         }
     }
     leave_func();

@@ -136,6 +136,7 @@ collection_widget::collection_widget(QWidget *parent) :
     this->sb_clt_id = new QSpinBox(this->gb_clt);
     this->sb_clt_face = new QSpinBox(this->gb_clt);
     this->pb_take = new QPushButton(tr("take"), this->gb_clt);
+    this->pb_pic = new QPushButton(tr("form pic"), this->gb_clt);
 
     vl = new QVBoxLayout;
     gl = new QGridLayout;
@@ -151,6 +152,7 @@ collection_widget::collection_widget(QWidget *parent) :
     vl->addLayout(hl);
     vl->addLayout(gl);
     vl->addWidget(this->pb_take);
+    vl->addWidget(this->pb_pic);
     this->gb_clt->setLayout(vl);
 
     vl = new QVBoxLayout;
@@ -167,6 +169,7 @@ collection_widget::collection_widget(QWidget *parent) :
 
     this->pb_close_cam->setDisabled(true);
     this->pb_take->setDisabled(true);
+    this->pb_pic->setDisabled(true);
     this->lb_clt_file->setTextInteractionFlags(Qt::TextSelectableByMouse);
     this->lb_clt_name->setTextInteractionFlags(Qt::TextSelectableByMouse);
     this->wgt_right->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -174,6 +177,7 @@ collection_widget::collection_widget(QWidget *parent) :
     connect(this->pb_open_cam, &QPushButton::clicked, this, &collection_widget::open_cam);
     connect(this->pb_close_cam, &QPushButton::clicked, this, &collection_widget::close_cam);
     connect(this->pb_take, &QPushButton::clicked, this, &collection_widget::take);
+    connect(this->pb_pic, &QPushButton::clicked, this, &collection_widget::select_pic);
 }
 
 void collection_widget::clt_loaded()
@@ -182,6 +186,7 @@ void collection_widget::clt_loaded()
     this->lb_clt_file->setText(fname.right(fname.length() - fname.lastIndexOf('/') - 1));
     this->lb_clt_name->setText(fc->clt_name().c_str());
     this->pb_take->setEnabled(true);
+    this->pb_pic->setEnabled(true);
 }
 
 void collection_widget::clt_closed()
@@ -217,6 +222,17 @@ void collection_widget::close_cam()
         this->pb_close_cam->setDisabled(true);
         this->pb_open_cam->setEnabled(true);
     }
+}
+
+void collection_widget::select_pic()
+{
+    QString pic;
+    pic = QFileDialog::getOpenFileName(this, tr("choose pic"), "/home/dryland/bishe/lq/orl_faces", tr("Image Files (*.png *.jpg *.bmp *.pgm)"));
+    Mat img = imread(pic.toLocal8Bit().constData());
+    int id = this->sb_clt_id->value();
+    int facenum = this->sb_clt_face->value();
+    fc->add_face(id, facenum, img);
+    emit this->take_done();
 }
 
 void collection_widget::take()

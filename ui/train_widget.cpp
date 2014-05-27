@@ -69,6 +69,7 @@ void train_widget::train_all()
     for (int i = 0; i < ids.size(); i++) {
         faces = fc->all_face(ids[i]);
         for (int j = 0; j < faces.size(); j++) {
+            if (fc->is_trained(ids[i], faces[j])) continue;
             Mat face;
             fc->get_face(ids[i], faces[j], face);
             std::vector<sift_keypoint_descr_t> kpds;

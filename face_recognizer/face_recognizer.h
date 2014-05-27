@@ -23,7 +23,7 @@ class face_recognizer
     public:
         face_recognizer();
         void train(Mat &img, std::vector<struct sift_keypoint_descr_t> &kpds);
-        void match(std::vector<struct sift_keypoint_descr_t> &kpds1,
+        void match(bool youhua, std::vector<struct sift_keypoint_descr_t> &kpds1,
                    std::vector<struct sift_keypoint_descr_t> &kpds2,
                    double thresh,
                    int *m_cnt);

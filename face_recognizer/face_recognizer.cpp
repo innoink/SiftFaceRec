@@ -72,22 +72,66 @@ void face_recognizer::train(Mat &img, std::vector<struct sift_keypoint_descr_t> 
     leave_func();
 }
 
-void face_recognizer::match(std::vector<sift_keypoint_descr_t> &kpds1, std::vector<sift_keypoint_descr_t> &kpds2, double thresh, int *m_cnt)
+struct pipei_t {
+        int k1,k2;
+        float x,y,score;
+};
+
+void pipei_filter(std::vector<struct pipei_t> ps, std::vector<sift_keypoint_descr_t> &kpds1, std::vector<sift_keypoint_descr_t> &kpds2)
+{
+    int i, besti = -1;
+    if (ps.empty()) return;
+    float best = 99999999.0;
+    for (i = 0; i < ps.size(); i++) {
+        if (ps.at(i).score < best) {
+            besti = i;
+            best = ps[i].score;
+        }
+    }
+    if (besti = -1) return;
+    float t;
+    t = fabs(kpds1[ps[besti].k1].y - kpds1[ps[besti].k2].y) / fabs(kpds1[ps[besti].k1].x - kpds1[ps[besti].k2].x);
+    std::vector<int> filter;
+    for (int j = 0; j < ps.size(); j++) {
+        float t2 = fabs(kpds1[ps[j].k1].y - kpds1[ps[j].k2].y) / fabs(kpds1[ps[j].k1].x - kpds1[ps[j].k2].x);
+        if (t2 > t + 0.2) {
+            filter.push_back(j);
+        }
+    }
+    for (int j = 0; j < filter.size(); j++)
+        ps.erase(ps.begin()+filter[j]);
+
+}
+
+void face_recognizer::match(bool youhua, std::vector<sift_keypoint_descr_t> &kpds1, std::vector<sift_keypoint_descr_t> &kpds2, double thresh, int *m_cnt)
 {
     int k1, k2;
     *m_cnt = 0;
+    std::vector<struct pipei_t> ps;
     for (k1 = 0; k1 < kpds1.size(); ++k1) {
         float best = FLT_MAX;
         float second_best = FLT_MAX;
         int bestk = -1;
 
         for (k2 = 0; k2 < kpds2.size(); ++k2) {
+
+            float d1 = (kpds1.at(k1).x - kpds2.at(k2).x);
+            float d2 = (kpds1.at(k1).y - kpds2.at(k2).y);
+
+            d1 /= 92;
+            d2 /= 112;
+
+            d1 = d1 * d1;
+            d2 = d2 * d2;
+
+            if (d1 + d2 > 0.4 && youhua) continue;
             float acc = 0;
             for (int i = 0; i < 128; ++i) {
                 float delta = kpds1.at(k1).descr[i] -
                               kpds2.at(k2).descr[i];
                 acc += delta * delta;
             }
+            fprintf(stderr, "acc = %f, d1 = %f, d2 = %f\n", acc, d1, d2);
             fprintf(stderr, "acc = %f, best = %f\n", acc, best);
             if(acc < best) {
                 second_best = best ;
@@ -100,8 +144,17 @@ void face_recognizer::match(std::vector<sift_keypoint_descr_t> &kpds1, std::vect
         /* Lowe's method: accept the match only if unique. */
         if(thresh * second_best > best &&
             bestk != -1) {
+            struct pipei_t p;
+            p.k1 = k1;
+            p.k2 = bestk;
+            p.score = best;
+            ps.push_back(p);
             fprintf(stderr, "k1=%d k2=%d score=%f\n", k1, bestk, best);
-                (*m_cnt)++;
+                //(*m_cnt)++;
         }
     }
+    if(youhua) {
+        pipei_filter(ps, kpds1, kpds2);
+    }
+    *m_cnt = ps.size();
 }

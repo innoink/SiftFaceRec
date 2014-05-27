@@ -57,6 +57,7 @@ class collection_widget : public QWidget
         void close_cam();
 
         void take();
+        void select_pic();
 
 
         void clt_loaded();
@@ -81,6 +82,7 @@ class collection_widget : public QWidget
         QSpinBox *sb_clt_id;
         QSpinBox *sb_clt_face;
         QPushButton *pb_take;
+        QPushButton *pb_pic;
 
         face_detector fd;
         face_collection *fc;
