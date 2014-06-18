@@ -31,7 +31,7 @@ void capture_worker::do_capture()
         if (!this->capture->grab())
             continue;
         frame = new Mat;
-        this->capture->retrieve(*frame);
+        if (!this->capture->retrieve(*frame)) continue;
         frame_mat = frame->clone();
         foreach (fpu, this->fp) {
             fpu.func(&frame_mat);

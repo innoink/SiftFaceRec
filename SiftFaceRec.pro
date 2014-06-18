@@ -53,12 +53,18 @@ unix{
     LIBS += -lvl -lvedis
 }
 win32{
-    INCLUDEPATH += "C:/opencv/opencv/build/include/opencv" \
-                   "C:/opencv/opencv/build/include"
+    INCLUDEPATH += "C:/opencv/build/include/opencv" \
+                   "C:/opencv/build/include" \
+                   "C:/vedis-ds-126" \
+                   "C:/vlfeat"
 
-    LIBS += "C:/opencv/lib/libopencv_core241.dll.a" \
-            "C:/opencv/lib/libopencv_features2d241.dll.a" \
-            "C:/opencv/lib/libopencv_highgui241.dll.a" \
-            "C:/opencv/lib/libopencv_video241.dll.a" \
-            "C:/opencv/lib/libopencv_imgproc241.dll.a"
+    LIBS += "C:/opencv/sources-build/lib/libopencv_core248.dll.a" \
+            "C:/opencv/sources-build/lib/libopencv_features2d248.dll.a" \
+            "C:/opencv/sources-build/lib/libopencv_highgui248.dll.a" \
+            "C:/opencv/sources-build/lib/libopencv_video248.dll.a" \
+            "C:/opencv/sources-build/lib/libopencv_imgproc248.dll.a" \
+            "C:/opencv/sources-build/lib/libopencv_objdetect248.dll.a" \
+            "C:/opencv/sources-build/lib/libopencv_nonfree248.dll.a" \
+            "C:/vlfeat/bin/win32/libvl.dll" \
+            "C:/vedis-ds-126/libvedis.dll.a"
 }

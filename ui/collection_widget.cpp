@@ -209,7 +209,7 @@ void collection_widget::open_cam()
     unit.name = QString("face marker");
     unit.func = face_detector::face_marker_lbp;
     face_marker.append(unit);
-    this->wgt_camera->set_processor(face_marker);
+    emit this->wgt_camera->set_processor(face_marker);
     if (this->wgt_camera->open_camera(this->sb_dev_no->value())) {
         this->pb_open_cam->setDisabled(true);
         this->pb_close_cam->setEnabled(true);
