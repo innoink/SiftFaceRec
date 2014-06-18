@@ -10,7 +10,6 @@ int main(int argc, char *argv[])
     vedis_lib_config(VEDIS_LIB_CONFIG_THREAD_LEVEL_MULTI);
     qDebug() << vedis_lib_is_threadsafe();
 
-    fprintf(stderr, "%f\n", FLT_MAX);
     main_window w;
     w.show();
 
